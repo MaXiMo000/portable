@@ -1,0 +1,38 @@
+[project]
+# "portable" was already taken on PyPI, same story as every sibling in
+# this portfolio. The installed command stays the short name --
+# python-dateutil installs `dateutil`, this installs `portable`.
+name = "portable-evidence"
+version = "0.1.0"
+description = "Does a data export actually contain what it promises? Checks a real export against a declared category manifest -- found or missing, per category."
+requires-python = ">=3.10"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["data-portability", "privacy", "gdpr", "evidence", "compliance"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Testing",
+]
+# PyYAML for the manifest file -- same real dependency invariant/escrow
+# already use elsewhere in this portfolio, not a new convention.
+dependencies = ["PyYAML>=6.0"]
+
+urls.Homepage = "https://github.com/MaXiMo000/portable"
+urls.Source = "https://github.com/MaXiMo000/portable"
+urls.Issues = "https://github.com/MaXiMo000/portable/issues"
+urls.Changelog = "https://github.com/MaXiMo000/portable/releases"
+
+[project.scripts]
+portable = "portable.cli:main"
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["portable*"]
