@@ -65,6 +65,17 @@ class TestLoadManifest(unittest.TestCase):
         with self.assertRaises(ManifestError):
             load_manifest(p)
 
+    def test_csv_column_without_file_glob_is_rejected(self):
+        p = self._write("categories:\n  - name: x\n    json_path: a\n    csv_column: b\n")
+        with self.assertRaises(ManifestError) as ctx:
+            load_manifest(p)
+        self.assertIn("csv_column", str(ctx.exception))
+
+    def test_csv_column_with_file_glob_is_accepted(self):
+        p = self._write("categories:\n  - name: x\n    file_glob: '*.csv'\n    csv_column: order_id\n")
+        categories = load_manifest(p)
+        self.assertEqual(categories[0]["csv_column"], "order_id")
+
     def test_duplicate_category_names_are_rejected(self):
         p = self._write(
             "categories:\n"

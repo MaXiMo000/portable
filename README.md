@@ -58,22 +58,38 @@ categories:
     min_count: 1                 # must be a list with at least this many items
   - name: uploaded_photos
     file_glob: "photos/*.jpg"    # for a directory-shaped export instead
+  - name: order_history_csv
+    file_glob: "Orders/*.csv"    # first non-empty match, if more than one
+    csv_column: order_id         # + this column must have real values in it
+    min_count: 1                 # applies to non-empty *rows* of that column
 ```
 
 Then check a real export against it:
 
 ```
 portable check export.json export-manifest.yaml        # a single JSON export
-portable check export-directory/ export-manifest.yaml   # a directory/archive export
+portable check export-directory/ export-manifest.yaml   # a directory export
+portable check export.zip export-manifest.yaml          # a zip archive export
 ```
 
+A `.zip` export (a Google-Takeout-style archive) is extracted to a scratch
+directory and checked exactly like an already-unpacked directory export --
+`file_glob` and `csv_column` categories never need to know which one they
+got.
+
 Each category needs exactly one of `json_path` (checked against a single
-JSON file export) or `file_glob` (checked against a directory export,
-matched with `pathlib.Path.glob`, must resolve to at least one non-empty
-file). Pointing a `json_path` category at a directory export, or a
-`file_glob` category at a JSON file, reports that one category as
-`unverified` -- not a failure, just the wrong export shape for what it
-needs, named clearly rather than silently skipped.
+JSON file export) or `file_glob` (checked against a directory or zip
+export, matched with `pathlib.Path.glob`, must resolve to at least one
+non-empty file). Pointing a `json_path` category at a directory/zip
+export, or a `file_glob` category at a JSON file, reports that one
+category as `unverified` -- not a failure, just the wrong export shape
+for what it needs, named clearly rather than silently skipped.
+
+Adding `csv_column` to a `file_glob` category opens the first matching
+file as CSV and additionally requires that column to have at least
+`min_count` (default 1) non-empty values -- a category with the right
+*filename* but an empty or header-only CSV inside it would otherwise read
+as `found` from the filename match alone.
 
 `--json` prints the full machine-readable report. Exit code is `1` only if
 a category comes back `missing` -- `unverified` never fails it, same
@@ -96,10 +112,12 @@ key being absent.
   every order that ever happened. That's a correctness question about the
   export's content, a different and harder problem than "is the category
   there at all."
-- **JSON and glob-matched files only.** A real export is often a ZIP of
-  CSVs (a Google-Takeout-style archive) -- extracting an archive and
-  parsing CSV is real, addable scope, deliberately not built for v1 to
-  keep the core small and correct first.
+- **No nested archives.** A `.zip` export is extracted one level; a ZIP
+  containing another ZIP inside it isn't recursed into. Real Google-
+  Takeout-style exports don't nest this way, so it wasn't worth the extra
+  code. Extraction has no size cap -- fine for the "your own export"
+  scope this tool holds itself to (see "Scope," above), not something to
+  point at a ZIP you don't already trust.
 - **No wildcards, filters, or a real JSONPath grammar** in `json_path` --
   dot keys and `[N]` indices only. Every real manifest entry names one
   concrete field or list, not a query over the whole document.
@@ -114,6 +132,6 @@ python tests/test_check.py      # found/missing/unverified classification
 python tests/test_cli.py        # the real CLI entry point, real files, real argv
 ```
 
-40 tests.
+51 tests.
 
 MIT licensed.

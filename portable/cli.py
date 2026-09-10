@@ -2,9 +2,12 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import pathlib
 import sys
+import tempfile
+import zipfile
 
 from .check import FOUND, MISSING, UNVERIFIED, check_export
 from .manifest import ManifestError, load_manifest
@@ -35,15 +38,28 @@ def main(argv: list[str] | None = None) -> int:
 
     document = None
     export_dir = None
-    if export_path.is_dir():
-        export_dir = export_path
-    else:
-        try:
-            document = json.loads(export_path.read_text(encoding="utf-8"))
-        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
-            sys.exit(f"portable: could not read {export_path} as JSON: {exc}")
+    with contextlib.ExitStack() as stack:
+        if export_path.is_dir():
+            export_dir = export_path
+        elif zipfile.is_zipfile(export_path):
+            # A Google-Takeout-style archive: extracted to a scratch
+            # directory and then treated exactly like a directory export --
+            # file_glob (and csv_column, above it) never need to know the
+            # export arrived zipped rather than already unpacked.
+            tmp = stack.enter_context(tempfile.TemporaryDirectory(prefix="portable-"))
+            try:
+                with zipfile.ZipFile(export_path) as zf:
+                    zf.extractall(tmp)
+            except zipfile.BadZipFile as exc:
+                sys.exit(f"portable: could not read {export_path} as a zip archive: {exc}")
+            export_dir = pathlib.Path(tmp)
+        else:
+            try:
+                document = json.loads(export_path.read_text(encoding="utf-8"))
+            except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+                sys.exit(f"portable: could not read {export_path} as JSON: {exc}")
 
-    results = check_export(categories, document=document, export_dir=export_dir)
+        results = check_export(categories, document=document, export_dir=export_dir)
 
     if args.json:
         print(json.dumps(results, indent=2))

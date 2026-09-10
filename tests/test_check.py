@@ -93,6 +93,56 @@ class TestFileCategory(unittest.TestCase):
         self.assertIn("needs a directory export", results[0]["detail"])
 
 
+class TestCsvCategory(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.dir = pathlib.Path(self.tmp.name)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def _write_csv(self, relpath: str, rows: list[str]):
+        path = self.dir / relpath
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("\n".join(rows) + "\n", encoding="utf-8")
+
+    def test_column_with_non_empty_values_is_found(self):
+        self._write_csv("Orders/orders.csv", ["order_id,item", "1001,Widget", "1002,Gadget"])
+        cats = [{"name": "orders", "file_glob": "Orders/*.csv", "csv_column": "order_id"}]
+        results = check_export(cats, export_dir=self.dir)
+        self.assertEqual(results[0]["status"], FOUND)
+
+    def test_missing_column_name_is_missing(self):
+        self._write_csv("Orders/orders.csv", ["order_id,item", "1001,Widget"])
+        cats = [{"name": "orders", "file_glob": "Orders/*.csv", "csv_column": "nonexistent"}]
+        results = check_export(cats, export_dir=self.dir)
+        self.assertEqual(results[0]["status"], MISSING)
+        self.assertIn("not found", results[0]["detail"])
+
+    def test_column_present_but_all_values_empty_is_missing(self):
+        self._write_csv("Orders/orders.csv", ["order_id,item", ",Widget", ",Gadget"])
+        cats = [{"name": "orders", "file_glob": "Orders/*.csv", "csv_column": "order_id"}]
+        results = check_export(cats, export_dir=self.dir)
+        self.assertEqual(results[0]["status"], MISSING)
+
+    def test_min_count_below_actual_non_empty_values_is_missing(self):
+        self._write_csv("Orders/orders.csv", ["order_id,item", "1001,Widget"])
+        cats = [{"name": "orders", "file_glob": "Orders/*.csv", "csv_column": "order_id", "min_count": 5}]
+        results = check_export(cats, export_dir=self.dir)
+        self.assertEqual(results[0]["status"], MISSING)
+
+    def test_no_matching_csv_file_is_missing_same_as_file_glob(self):
+        cats = [{"name": "orders", "file_glob": "Orders/*.csv", "csv_column": "order_id"}]
+        results = check_export(cats, export_dir=self.dir)
+        self.assertEqual(results[0]["status"], MISSING)
+        self.assertIn("no non-empty file matching", results[0]["detail"])
+
+    def test_csv_category_against_a_json_document_is_unverified(self):
+        cats = [{"name": "orders", "file_glob": "Orders/*.csv", "csv_column": "order_id"}]
+        results = check_export(cats, document={})
+        self.assertEqual(results[0]["status"], UNVERIFIED)
+
+
 class TestCheckExport(unittest.TestCase):
     def test_a_category_with_neither_kind_declared_is_unverified(self):
         results = check_export([{"name": "mystery"}], document={})

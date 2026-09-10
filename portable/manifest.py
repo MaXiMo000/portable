@@ -40,5 +40,8 @@ def load_manifest(path: str) -> list[dict]:
             raise ManifestError(f"{path}: category '{name}' needs a 'json_path' or 'file_glob'")
         if "json_path" in cat and "file_glob" in cat:
             raise ManifestError(f"{path}: category '{name}' can't have both 'json_path' and 'file_glob'")
+        if "csv_column" in cat and "file_glob" not in cat:
+            raise ManifestError(f"{path}: category '{name}' has 'csv_column' but no 'file_glob' "
+                                 f"to say which file(s) to look in")
 
     return categories
