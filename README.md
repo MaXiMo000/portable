@@ -1,5 +1,12 @@
 # portable
 
+> **Deprecated: `portable` is now the [`export_contains`](https://github.com/MaXiMo000/invariant#readme)
+> check type in [invariant](https://github.com/MaXiMo000/invariant)** (`pip install invariant-verify`),
+> where it runs alongside SQL, backup-restore, security and GDPR-erasure checks
+> and writes into the same proof bundle. `portable check` still works -- same
+> arguments, output and exit codes -- and delegates to it. Everything below
+> describes that behavior, and applies to `export_contains` too.
+
 [![ci](https://github.com/MaXiMo000/portable/actions/workflows/ci.yml/badge.svg)](https://github.com/MaXiMo000/portable/actions/workflows/ci.yml)
 
 **Does a data export actually contain what it promises? Checked category
@@ -115,9 +122,8 @@ key being absent.
 - **No nested archives.** A `.zip` export is extracted one level; a ZIP
   containing another ZIP inside it isn't recursed into. Real Google-
   Takeout-style exports don't nest this way, so it wasn't worth the extra
-  code. Extraction has no size cap -- fine for the "your own export"
-  scope this tool holds itself to (see "Scope," above), not something to
-  point at a ZIP you don't already trust.
+  code. Extraction is capped at 2 GiB uncompressed; a bigger archive reads as
+  `unverified` rather than filling the disk.
 - **No wildcards, filters, or a real JSONPath grammar** in `json_path` --
   dot keys and `[N]` indices only. Every real manifest entry names one
   concrete field or list, not a query over the whole document.
@@ -126,12 +132,9 @@ key being absent.
 
 ```
 pip install -e .
-python tests/test_path.py       # the json_path resolver
 python tests/test_manifest.py   # export-manifest.yaml validation
-python tests/test_check.py      # found/missing/unverified classification
 python tests/test_cli.py        # the real CLI entry point, real files, real argv
 ```
 
-51 tests.
 
 MIT licensed.

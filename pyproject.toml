@@ -3,15 +3,15 @@
 # this portfolio. The installed command stays the short name --
 # python-dateutil installs `dateutil`, this installs `portable`.
 name = "portable-evidence"
-version = "0.1.0"
-description = "Does a data export actually contain what it promises? Checks a real export against a declared category manifest -- found or missing, per category."
+version = "0.2.0"
+description = "Deprecated: now invariant's export_contains check. The portable command still works and delegates to it."
 requires-python = ">=3.10"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 keywords = ["data-portability", "privacy", "gdpr", "evidence", "compliance"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 7 - Inactive",
     "Environment :: Console",
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
@@ -20,7 +20,7 @@ classifiers = [
 ]
 # PyYAML for the manifest file -- same real dependency invariant/escrow
 # already use elsewhere in this portfolio, not a new convention.
-dependencies = ["PyYAML>=6.0"]
+dependencies = ["invariant-verify>=0.2.0", "PyYAML>=6.0"]
 
 urls.Homepage = "https://github.com/MaXiMo000/portable"
 urls.Source = "https://github.com/MaXiMo000/portable"

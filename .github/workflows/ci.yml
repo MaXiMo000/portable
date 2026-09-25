@@ -23,9 +23,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: pip install -e .
-      - run: python tests/test_path.py
       - run: python tests/test_manifest.py
-      - run: python tests/test_check.py
       - run: python tests/test_cli.py
 
   package:
